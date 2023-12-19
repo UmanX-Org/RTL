@@ -61,6 +61,14 @@ export class BoltzSwapsComponent implements OnInit, AfterViewInit, OnChanges, On
     this.screenSize = this.commonService.getScreenSize();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.selectedSwapType && !changes.selectedSwapType.firstChange) {
+      this.setTableColumns();
+    }
+    this.swapCaption = (this.selectedSwapType === SwapTypeEnum.SWAP_IN) ? 'Swap In' : 'Swap Out';
+    this.loadSwapsTable(this.swapsData);
+  }
+
   ngOnInit() {
     this.store.select(lndPageSettings).pipe(takeUntil(this.unSubs[0])).
       subscribe((settings: { pageSettings: PageSettings[], apiCallStatus: ApiCallStatusPayload }) => {
@@ -69,7 +77,7 @@ export class BoltzSwapsComponent implements OnInit, AfterViewInit, OnChanges, On
         this.tableSettingSwapIn = settings.pageSettings.find((page) => page.pageId === this.PAGE_ID)?.tables.find((table) => table.tableId === this.tableSettingSwapIn.tableId) ||
         LND_DEFAULT_PAGE_SETTINGS.find((page) => page.pageId === this.PAGE_ID)?.tables.find((table) => table.tableId === this.tableSettingSwapIn.tableId)!;
         this.setTableColumns();
-        if (this.swapsData && this.swapsData.length > 0 && this.sort && this.paginator && this.displayedColumns.length > 0) {
+        if (this.swapsData && this.sort && this.paginator && this.displayedColumns.length > 0) {
           this.loadSwapsTable(this.swapsData);
         }
         this.colWidth = this.displayedColumns.length ? ((this.commonService.getContainerSize().width / this.displayedColumns.length) / 14) + 'rem' : '20rem';
@@ -81,14 +89,6 @@ export class BoltzSwapsComponent implements OnInit, AfterViewInit, OnChanges, On
     if (this.swapsData && this.swapsData.length > 0) {
       this.loadSwapsTable(this.swapsData);
     }
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes.selectedSwapType && !changes.selectedSwapType.firstChange) {
-      this.setTableColumns();
-    }
-    this.swapCaption = (this.selectedSwapType === SwapTypeEnum.SWAP_IN) ? 'Swap In' : 'Swap Out';
-    this.loadSwapsTable(this.swapsData);
   }
 
   setTableColumns() {

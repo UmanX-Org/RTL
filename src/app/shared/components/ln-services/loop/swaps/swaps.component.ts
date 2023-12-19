@@ -60,6 +60,11 @@ export class SwapsComponent implements OnInit, AfterViewInit, OnChanges, OnDestr
     this.screenSize = this.commonService.getScreenSize();
   }
 
+  ngOnChanges(change: SimpleChanges) {
+    this.swapCaption = (this.selectedSwapType === LoopTypeEnum.LOOP_IN) ? 'Loop In' : 'Loop Out';
+    this.loadSwapsTable(this.swapsData);
+  }
+
   ngOnInit() {
     this.store.select(lndPageSettings).pipe(takeUntil(this.unSubs[0])).
       subscribe((settings: { pageSettings: PageSettings[], apiCallStatus: ApiCallStatusPayload }) => {
@@ -71,7 +76,7 @@ export class SwapsComponent implements OnInit, AfterViewInit, OnChanges, OnDestr
         }
         this.displayedColumns.push('actions');
         this.pageSize = this.tableSetting.recordsPerPage ? +this.tableSetting.recordsPerPage : PAGE_SIZE;
-        if (this.swapsData && this.swapsData.length > 0 && this.sort && this.paginator && this.displayedColumns.length > 0) {
+        if (this.swapsData && this.sort && this.paginator && this.displayedColumns.length > 0) {
           this.loadSwapsTable(this.swapsData);
         }
         this.colWidth = this.displayedColumns.length ? ((this.commonService.getContainerSize().width / this.displayedColumns.length) / 14) + 'rem' : '20rem';
@@ -83,11 +88,6 @@ export class SwapsComponent implements OnInit, AfterViewInit, OnChanges, OnDestr
     if (this.swapsData && this.swapsData.length > 0) {
       this.loadSwapsTable(this.swapsData);
     }
-  }
-
-  ngOnChanges(change: SimpleChanges) {
-    this.swapCaption = (this.selectedSwapType === LoopTypeEnum.LOOP_IN) ? 'Loop In' : 'Loop Out';
-    this.loadSwapsTable(this.swapsData);
   }
 
   applyFilter() {

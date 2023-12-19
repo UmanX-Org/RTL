@@ -1,17 +1,17 @@
 import { createReducer, on } from '@ngrx/store';
 import { initCLNState } from './cln.state';
 import {
-  addInvoice, addPeer, removeChannel, removePeer, resetCLStore, setBalance, setChannels,
-  setChildNodeSettingsCL, setFeeRates, setFees, setForwardingHistory,
-  setInfo, setInvoices, setLocalRemoteBalance, setOffers, addOffer, setPayments, setPeers, setUTXOs,
-  updateCLAPICallStatus, updateInvoice, updateOffer, setOfferBookmarks, addUpdateOfferBookmark, removeOfferBookmark, setPageSettings
+  addInvoice, addPeer, removeChannel, removePeer, resetCLNStore, setChannels,
+  setChildNodeSettingsCLN, setFeeRates, setForwardingHistory,
+  setInfo, setInvoices, setOffers, addOffer, setPayments, setPeers, setUTXOBalances,
+  updateCLNAPICallStatus, updateInvoice, updateOffer, setOfferBookmarks, addUpdateOfferBookmark, removeOfferBookmark, setPageSettings
 } from './cln.actions';
 import { Channel, OfferBookmark } from '../../shared/models/clnModels';
 import { CLNForwardingEventsStatusEnum, CLN_DEFAULT_PAGE_SETTINGS } from '../../shared/services/consts-enums-functions';
 import { PageSettings } from '../../shared/models/pageSettings';
 
 export const CLNReducer = createReducer(initCLNState,
-  on(updateCLAPICallStatus, (state, { payload }) => {
+  on(updateCLNAPICallStatus, (state, { payload }) => {
     const updatedApisCallStatus = JSON.parse(JSON.stringify(state.apisCallStatus));
     if (payload.action) {
       updatedApisCallStatus[payload.action] = {
@@ -27,21 +27,18 @@ export const CLNReducer = createReducer(initCLNState,
       apisCallStatus: updatedApisCallStatus
     };
   }),
-  on(setChildNodeSettingsCL, (state, { payload }) => ({
+  on(setChildNodeSettingsCLN, (state, { payload }) => ({
     ...state,
     nodeSettings: payload
   })),
-  on(resetCLStore, (state, { payload }) => ({
+  on(resetCLNStore, (state, { payload }) => ({
     ...initCLNState,
     nodeSettings: payload
   })),
   on(setInfo, (state, { payload }) => ({
     ...state,
-    information: payload
-  })),
-  on(setFees, (state, { payload }) => ({
-    ...state,
-    fees: payload
+    information: payload,
+    fees: { feeCollected: payload.fees_collected_msat }
   })),
   on(setFeeRates, (state, { payload }) => {
     if (payload.perkb) {
@@ -60,13 +57,11 @@ export const CLNReducer = createReducer(initCLNState,
       };
     }
   }),
-  on(setBalance, (state, { payload }) => ({
+  on(setUTXOBalances, (state, { payload }) => ({
     ...state,
-    balance: payload
-  })),
-  on(setLocalRemoteBalance, (state, { payload }) => ({
-    ...state,
-    localRemoteBalance: payload
+    utxos: payload.utxos || [],
+    balance: payload.balance,
+    localRemoteBalance: payload.localRemoteBalance
   })),
   on(setPeers, (state, { payload }) => ({
     ...state,
@@ -151,16 +146,19 @@ export const CLNReducer = createReducer(initCLNState,
   })),
   on(updateInvoice, (state, { payload }) => {
     const modifiedInvoices = state.invoices;
-    modifiedInvoices.invoices = modifiedInvoices.invoices?.map((invoice) => ((invoice.label === payload.label) ? payload : invoice));
+    modifiedInvoices.invoices = modifiedInvoices.invoices?.map((invoice) => {
+      if (invoice.label === payload.label) {
+        invoice.amount_received_msat = payload.msat;
+        invoice.payment_preimage = payload.preimage;
+        invoice.status = 'paid';
+      }
+      return invoice;
+    });
     return {
       ...state,
       invoices: modifiedInvoices
     };
   }),
-  on(setUTXOs, (state, { payload }) => ({
-    ...state,
-    utxos: payload
-  })),
   on(setOffers, (state, { payload }) => ({
     ...state,
     offers: payload

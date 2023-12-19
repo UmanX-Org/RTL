@@ -85,7 +85,7 @@ export class NonRoutingPeersComponent implements OnInit, AfterViewInit, OnDestro
         } else {
           this.routingPeersData = [];
         }
-        if (this.routingPeersData.length > 0 && this.sort && this.paginator && this.displayedColumns.length > 0) {
+        if (this.routingPeersData && this.sort && this.paginator && this.displayedColumns.length > 0) {
           this.loadNonRoutingPeersTable(this.routingPeersData);
         }
         this.logger.info(fhSelector.apiCallStatus);
@@ -161,7 +161,7 @@ export class NonRoutingPeersComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   onManagePeer(selNonRoutingChannel: Channel) {
-    this.router.navigate(['../../', 'connections', 'channels', 'open'], { relativeTo: this.activatedRoute, state: { filter: selNonRoutingChannel.chan_id } });
+    this.router.navigate(['../../', 'connections', 'channels', 'open'], { relativeTo: this.activatedRoute, state: { filterValue: selNonRoutingChannel.chan_id } });
   }
 
   // groupRoutingPeers(forwardingEvents: ForwardingEvent[]) {

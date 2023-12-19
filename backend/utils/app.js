@@ -10,9 +10,9 @@ import sharedRoutes from '../routes/shared/index.js';
 import lndRoutes from '../routes/lnd/index.js';
 import clnRoutes from '../routes/cln/index.js';
 import eclRoutes from '../routes/eclair/index.js';
+import { Database } from './database.js';
 import { Common } from './common.js';
 import { Logger } from './logger.js';
-import { CLWSClient } from '../controllers/cln/webSocketClient.js';
 import { ECLWSClient } from '../controllers/eclair/webSocketClient.js';
 import { LNDWSClient } from '../controllers/lnd/webSocketClient.js';
 const ONE_DAY = 1000 * 60 * 60 * 24;
@@ -22,8 +22,9 @@ export class ExpressApplication {
         this.logger = Logger;
         this.common = Common;
         this.eclWsClient = ECLWSClient;
-        this.clWsClient = CLWSClient;
+        // public clWsClient: CLWebSocketClient = CLWSClient;
         this.lndWsClient = LNDWSClient;
+        this.databaseService = Database;
         this.directoryName = dirname(fileURLToPath(import.meta.url));
         this.getApp = () => this.app;
         this.setCORS = () => { CORS.mount(this.app); };
@@ -79,6 +80,7 @@ export class ExpressApplication {
         this.setCORS();
         this.setCSRF();
         this.setApplicationRoutes();
+        this.databaseService.migrateDatabase();
     }
 }
 export default ExpressApplication;

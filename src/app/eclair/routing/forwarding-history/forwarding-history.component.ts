@@ -56,6 +56,20 @@ export class ECLForwardingHistoryComponent implements OnInit, OnChanges, AfterVi
     this.screenSize = this.commonService.getScreenSize();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.eventsData) {
+      this.apiCallStatus = { status: APICallStatusEnum.COMPLETED, action: 'FetchPayments' };
+      this.eventsData = changes.eventsData.currentValue;
+      if (!changes.eventsData.firstChange) {
+        this.loadForwardingEventsTable(this.eventsData);
+      }
+    }
+    if (changes.selFilter && !changes.selFilter.firstChange) {
+      this.selFilterBy = 'all';
+      this.applyFilter();
+    }
+  }
+
   ngOnInit() {
     this.store.select(eclPageSettings).pipe(takeUntil(this.unSubs[0])).
       subscribe((settings: { pageSettings: PageSettings[], apiCallStatus: ApiCallStatusPayload }) => {
@@ -85,7 +99,7 @@ export class ECLForwardingHistoryComponent implements OnInit, OnChanges, AfterVi
           this.errorMessage = !this.apiCallStatus.message ? '' : (typeof (this.apiCallStatus.message) === 'object') ? JSON.stringify(this.apiCallStatus.message) : this.apiCallStatus.message;
         }
         this.eventsData = paymentsSelector.payments && paymentsSelector.payments.relayed ? paymentsSelector.payments.relayed : [];
-        if (this.eventsData.length > 0 && this.sort && this.paginator && this.displayedColumns.length > 0) {
+        if (this.eventsData && this.sort && this.paginator && this.displayedColumns.length > 0) {
           this.loadForwardingEventsTable(this.eventsData);
         }
         this.logger.info(this.eventsData);
@@ -98,20 +112,6 @@ export class ECLForwardingHistoryComponent implements OnInit, OnChanges, AfterVi
         this.loadForwardingEventsTable(this.eventsData);
       }
     }, 0);
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes.eventsData) {
-      this.apiCallStatus = { status: APICallStatusEnum.COMPLETED, action: 'FetchPayments' };
-      this.eventsData = changes.eventsData.currentValue;
-      if (!changes.eventsData.firstChange) {
-        this.loadForwardingEventsTable(this.eventsData);
-      }
-    }
-    if (changes.selFilter && !changes.selFilter.firstChange) {
-      this.selFilterBy = 'all';
-      this.applyFilter();
-    }
   }
 
   onForwardingEventClick(selFEvent: PaymentRelayed, event: any) {

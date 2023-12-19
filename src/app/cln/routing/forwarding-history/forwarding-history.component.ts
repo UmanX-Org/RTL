@@ -59,6 +59,23 @@ export class CLNForwardingHistoryComponent implements OnInit, OnChanges, AfterVi
     this.screenSize = this.commonService.getScreenSize();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.eventsData) {
+      this.apiCallStatus = { status: APICallStatusEnum.COMPLETED, action: 'FetchForwardingHistory' };
+      this.eventsData = changes.eventsData.currentValue;
+      this.successfulEvents = this.eventsData;
+      this.totalForwardedTransactions = this.eventsData.length;
+      if (this.paginator) { this.paginator.firstPage(); }
+      if (!changes.eventsData.firstChange) {
+        this.loadForwardingEventsTable(this.successfulEvents);
+      }
+    }
+    if (changes.selFilter && !changes.selFilter.firstChange) {
+      this.selFilterBy = 'all';
+      this.applyFilter();
+    }
+  }
+
   ngOnInit() {
     this.store.select(clnPageSettings).pipe(takeUntil(this.unSubs[0])).
       subscribe((settings: { pageSettings: PageSettings[], apiCallStatus: ApiCallStatusPayload }) => {
@@ -94,7 +111,7 @@ export class CLNForwardingHistoryComponent implements OnInit, OnChanges, AfterVi
         if (this.eventsData.length <= 0 && fhSeletor.forwardingHistory.listForwards) {
           this.totalForwardedTransactions = fhSeletor.forwardingHistory.totalForwards || 0;
           this.successfulEvents = fhSeletor.forwardingHistory.listForwards || [];
-          if (this.successfulEvents.length > 0 && this.sort && this.paginator && this.displayedColumns.length > 0) {
+          if (this.successfulEvents && this.sort && this.paginator && this.displayedColumns.length > 0) {
             this.loadForwardingEventsTable(this.successfulEvents);
           }
           this.logger.info(fhSeletor);
@@ -108,23 +125,6 @@ export class CLNForwardingHistoryComponent implements OnInit, OnChanges, AfterVi
         this.loadForwardingEventsTable(this.successfulEvents);
       }
     }, 0);
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes.eventsData) {
-      this.apiCallStatus = { status: APICallStatusEnum.COMPLETED, action: 'FetchForwardingHistory' };
-      this.eventsData = changes.eventsData.currentValue;
-      this.successfulEvents = this.eventsData;
-      this.totalForwardedTransactions = this.eventsData.length;
-      if (this.paginator) { this.paginator.firstPage(); }
-      if (!changes.eventsData.firstChange) {
-        this.loadForwardingEventsTable(this.successfulEvents);
-      }
-    }
-    if (changes.selFilter && !changes.selFilter.firstChange) {
-      this.selFilterBy = 'all';
-      this.applyFilter();
-    }
   }
 
   onForwardingEventClick(selFEvent: ForwardingEvent, event: any) {

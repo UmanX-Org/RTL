@@ -20,6 +20,7 @@ export class CommonService {
         this.rtl_cookie_path = '';
         this.logout_redirect_link = '';
         this.cookie_value = '';
+        this.ln_version = '';
         this.api_version = '';
         this.secret_key = crypto.randomBytes(64).toString('hex');
         this.read_dummy_data = false;
@@ -29,9 +30,10 @@ export class CommonService {
             { name: 'JAN', days: 31 }, { name: 'FEB', days: 28 }, { name: 'MAR', days: 31 }, { name: 'APR', days: 30 }, { name: 'MAY', days: 31 }, { name: 'JUN', days: 30 },
             { name: 'JUL', days: 31 }, { name: 'AUG', days: 31 }, { name: 'SEP', days: 30 }, { name: 'OCT', days: 31 }, { name: 'NOV', days: 30 }, { name: 'DEC', days: 31 }
         ];
-        this.getSwapServerOptions = (req) => {
+        this.setSwapServerOptions = (req) => {
             const swapOptions = {
-                url: req.session.selectedNode.swap_server_url,
+                baseUrl: req.session.selectedNode.swap_server_url,
+                uri: '',
                 rejectUnauthorized: false,
                 json: true,
                 headers: { 'Grpc-Metadata-macaroon': '' }
@@ -67,8 +69,9 @@ export class CommonService {
         };
         this.getOptions = (req) => {
             if (req.session.selectedNode && req.session.selectedNode.options) {
-                req.session.selectedNode.options.method = (req.session.selectedNode.ln_implementation && req.session.selectedNode.ln_implementation.toUpperCase() !== 'ECL') ? 'GET' : 'POST';
+                req.session.selectedNode.options.method = (req.session.selectedNode.ln_implementation && req.session.selectedNode.ln_implementation.toUpperCase() === 'LND') ? 'GET' : 'POST';
                 delete req.session.selectedNode.options.form;
+                delete req.session.selectedNode.options.body;
                 req.session.selectedNode.options.qs = {};
                 return req.session.selectedNode.options;
             }
@@ -88,7 +91,15 @@ export class CommonService {
                 if (req.session.selectedNode && req.session.selectedNode.ln_implementation) {
                     switch (req.session.selectedNode.ln_implementation.toUpperCase()) {
                         case 'CLN':
-                            req.session.selectedNode.options.headers = { macaroon: Buffer.from(fs.readFileSync(join(req.session.selectedNode.macaroon_path, 'access.macaroon'))).toString('base64') };
+                            try {
+                                if (!req.session.selectedNode.rune_value) {
+                                    req.session.selectedNode.rune_value = this.getRuneValue(req.session.selectedNode.rune_path);
+                                }
+                                req.session.selectedNode.options.headers = { rune: req.session.selectedNode.rune_value };
+                            }
+                            catch (err) {
+                                throw new Error(err);
+                            }
                             break;
                         case 'ECL':
                             req.session.selectedNode.options.headers = { authorization: 'Basic ' + Buffer.from(':' + req.session.selectedNode.ln_api_password).toString('base64') };
@@ -114,6 +125,17 @@ export class CommonService {
                 return { status: 502, message: err };
             }
         };
+        this.getRuneValue = (rune_path) => {
+            const data = fs.readFileSync(rune_path, 'utf8');
+            const pattern = /LIGHTNING_RUNE="(?<runeValue>[^"]+)"/;
+            const match = data.match(pattern);
+            if (match.groups.runeValue) {
+                return match.groups.runeValue;
+            }
+            else {
+                throw new Error('Rune not found in the file.');
+            }
+        };
         this.setOptions = (req) => {
             if (this.nodes[0].options && this.nodes[0].options.headers) {
                 return;
@@ -130,7 +152,15 @@ export class CommonService {
                         if (node.ln_implementation) {
                             switch (node.ln_implementation.toUpperCase()) {
                                 case 'CLN':
-                                    node.options.headers = { macaroon: Buffer.from(fs.readFileSync(join(node.macaroon_path, 'access.macaroon'))).toString('base64') };
+                                    try {
+                                        if (!node.rune_value) {
+                                            node.rune_value = this.getRuneValue(node.rune_path);
+                                        }
+                                        node.options.headers = { rune: node.rune_value };
+                                    }
+                                    catch (err) {
+                                        throw new Error(err);
+                                    }
                                     break;
                                 case 'ECL':
                                     node.options.headers = { authorization: 'Basic ' + Buffer.from(':' + node.ln_api_password).toString('base64') };
@@ -223,6 +253,10 @@ export class CommonService {
             let err = JSON.parse(JSON.stringify(errRes));
             if (err && err.error && Object.keys(err.error).length === 0 && errRes.error && (errRes.error.stack || errRes.error.message)) {
                 errRes.error = errRes.error.stack || errRes.error.message;
+                err = JSON.parse(JSON.stringify(errRes));
+            }
+            else if (errRes.message || errRes.stack) {
+                errRes.error = errRes.message || errRes.stack;
                 err = JSON.parse(JSON.stringify(errRes));
             }
             if (!selectedNode) {
@@ -419,12 +453,25 @@ export class CommonService {
             });
         };
         this.isVersionCompatible = (currentVersion, checkVersion) => {
-            if (currentVersion) {
-                const versionsArr = currentVersion.trim()?.replace('v', '').split('-')[0].split('.') || [];
-                const checkVersionsArr = checkVersion.split('.');
-                return (+versionsArr[0] > +checkVersionsArr[0]) ||
-                    (+versionsArr[0] === +checkVersionsArr[0] && +versionsArr[1] > +checkVersionsArr[1]) ||
-                    (+versionsArr[0] === +checkVersionsArr[0] && +versionsArr[1] === +checkVersionsArr[1] && +versionsArr[2] >= +checkVersionsArr[2]);
+            if (currentVersion && currentVersion !== '') {
+                // eslint-disable-next-line prefer-named-capture-group
+                const pattern = /v?(\d+(\.\d+)*)/;
+                const match = currentVersion.match(pattern);
+                if (match && match.length && match.length > 1) {
+                    this.logger.log({ selectedNode: this.initSelectedNode, level: 'INFO', fileName: 'Common', msg: 'Global Version ' + match[1] });
+                    this.logger.log({ selectedNode: this.initSelectedNode, level: 'INFO', fileName: 'Common', msg: 'Checking Compatiblility with Version ' + checkVersion });
+                    const currentVersionArr = match[1].split('.') || [];
+                    currentVersionArr[1] = currentVersionArr[1].substring(0, 2);
+                    const checkVersionsArr = checkVersion.split('.');
+                    checkVersionsArr[1] = checkVersionsArr[1].substring(0, 2);
+                    return (+currentVersionArr[0] > +checkVersionsArr[0]) ||
+                        (+currentVersionArr[0] === +checkVersionsArr[0] && +currentVersionArr[1] > +checkVersionsArr[1]) ||
+                        (+currentVersionArr[0] === +checkVersionsArr[0] && +currentVersionArr[1] === +checkVersionsArr[1] && +currentVersionArr[2] >= +checkVersionsArr[2]);
+                }
+                else {
+                    this.logger.log({ selectedNode: this.initSelectedNode, level: 'ERROR', fileName: 'Common', msg: 'Invalid Version String ' + currentVersion });
+                    return false;
+                }
             }
             return false;
         };
