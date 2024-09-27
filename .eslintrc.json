@@ -23,13 +23,16 @@
         "plugin:@angular-eslint/template/process-inline-templates"
       ],
       "rules": {
-        "deprecation/deprecation": "error",
+        "@angular-eslint/component-selector": ["error", { "prefix": "rtl", "style": "kebab-case", "type": "element" }],
+        "@angular-eslint/directive-selector": ["error", { "style": "camelCase", "type": "attribute" }],
+        "@angular-eslint/consistent-component-styles": "off",
         "@angular-eslint/prefer-on-push-component-change-detection": "off",
+        "@angular-eslint/prefer-standalone": "off",
         "@angular-eslint/prefer-standalone-component": "off",
         "@angular-eslint/sort-ngmodule-metadata-arrays": "off",
         "@angular-eslint/use-component-view-encapsulation": "off",
         "@angular-eslint/use-injectable-provided-in": "off",
-                "@typescript-eslint/member-delimiter-style": "off",
+        "@typescript-eslint/member-delimiter-style": "off",
         "@typescript-eslint/no-non-null-assertion": "off",        
         "@typescript-eslint/type-annotation-spacing": 0,
         "quotes": ["error", "single"],
@@ -181,7 +184,7 @@
       "files": [
         "*.html"
       ],
-"parser": "@angular-eslint/template-parser",
+      "parser": "@angular-eslint/template-parser",
       "extends": [
         "plugin:@angular-eslint/template/all",
         "plugin:@angular-eslint/template/recommended",
@@ -189,8 +192,6 @@
       ],
       "rules": {
         "@angular-eslint/arrow-body-style": "off",
-        "@angular-eslint/component-selector": ["error", { "prefix": "rtl", "style": "kebab-case", "type": "element" }],
-        "@angular-eslint/directive-selector": ["error", { "style": "camelCase", "type": "attribute" }],
         "@angular-eslint/template/accessibility-elements-content": "off",
         "@angular-eslint/template/accessibility-interactive-supports-focus": "off",
         "@angular-eslint/template/button-has-type": "off",
@@ -206,6 +207,7 @@
         "@angular-eslint/template/no-positive-tabindex": "off",
         "@angular-eslint/template/prefer-ngsrc": "off",
         "@angular-eslint/template/prefer-control-flow": "off",
+        "@angular-eslint/template/prefer-self-closing-tags": "off",
         "@angular-eslint/template/use-track-by-function": "off"
       }
     }

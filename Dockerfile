@@ -1,18 +1,14 @@
-# ---------------
-# Install Dependencies
-# ---------------
-FROM node:18-alpine as builder
+ARG BASE_DISTRO="node:alpine"
+
+FROM --platform=${BUILDPLATFORM} ${BASE_DISTRO} as builder
 
 WORKDIR /RTL
 
 COPY package.json /RTL/package.json
 COPY package-lock.json /RTL/package-lock.json
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
-# ---------------
-# Build App
-# ---------------
 COPY . .
 
 # Build the Angular application
@@ -22,16 +18,13 @@ RUN npm run buildfrontend
 RUN npm run buildbackend
 
 # Remove non production necessary modules
-RUN npm prune --production
+RUN npm prune --omit=dev --legacy-peer-deps
 
-# ---------------
-# Release App
-# ---------------
-FROM node:18-alpine as runner
-
-WORKDIR /RTL
+FROM --platform=${TARGETPLATFORM} ${BASE_DISTRO} as runner
 
 RUN apk add --no-cache tini
+
+WORKDIR /RTL
 
 COPY --from=builder /RTL/rtl.js ./rtl.js
 COPY --from=builder /RTL/package.json ./package.json
