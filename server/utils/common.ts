@@ -11,7 +11,7 @@ export class CommonService {
   public logger: LoggerService = Logger;
   public nodes: SelectedNode[] = [];
   public selectedNode: SelectedNode = null;
-  public ssoInit = { rtlSso: 0, rtlCookiePath: '', logoutRedirectLink: '', cookieValue: '' };
+  public ssoInit = { rtlSSO: 0, rtlCookiePath: '', logoutRedirectLink: '', cookieValue: '' };
   public appConfig: ApplicationConfig = { defaultNodeIndex: 0, selectedNodeIndex: 0, rtlConfFilePath: '', dbDirectoryPath: join(dirname(fileURLToPath(import.meta.url)), '..', '..'), rtlPass: '', allowPasswordUpdate: true, enable2FA: false, secret2FA: '', SSO: this.ssoInit, nodes: [] };
   public port = 3000;
   public host = '';
@@ -413,7 +413,8 @@ export class CommonService {
     });
   };
 
-  public readCookie = () => {
+  public readCookie = (config) => {
+    this.appConfig.SSO = config.SSO;
     const exists = fs.existsSync(this.appConfig.SSO.rtlCookiePath);
     if (exists) {
       try {
@@ -541,7 +542,7 @@ export class CommonService {
     const selNode = <SelectedNode>req.session.selectedNode;
     if (selNode && selNode.index) {
       this.logger.log({ selectedNode: selNode, level: 'INFO', fileName: 'Config Setup:', msg: JSON.stringify(this.removeSecureData(JSON.parse(JSON.stringify(this.appConfig)))) });
-      this.logger.log({ selectedNode: selNode, level: 'INFO', fileName: 'Config Setup Variable', msg: 'SSO: ' + this.appConfig.SSO.rtlSso });
+      this.logger.log({ selectedNode: selNode, level: 'INFO', fileName: 'Config Setup Variable', msg: 'SSO: ' + this.appConfig.SSO.rtlSSO });
     }
   };
 

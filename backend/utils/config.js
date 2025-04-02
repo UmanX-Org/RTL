@@ -146,7 +146,7 @@ export class ConfigService {
                     this.common.nodes[idx] = { settings: { blockExplorerUrl: '' }, authentication: {} };
                     this.common.nodes[idx].index = node.index;
                     this.common.nodes[idx].lnNode = node.lnNode;
-                    this.common.nodes[idx].lnImplementation = (process?.env?.lnImplementation) ? process?.env?.lnImplementation : node.lnImplementation ? node.lnImplementation : 'LND';
+                    this.common.nodes[idx].lnImplementation = (process?.env?.LN_IMPLEMENTATION) ? process?.env?.LN_IMPLEMENTATION : node.lnImplementation ? node.lnImplementation : 'LND';
                     if (this.common.nodes[idx].lnImplementation === 'CLT') {
                         this.common.nodes[idx].lnImplementation = 'CLN';
                     }
@@ -318,10 +318,10 @@ export class ConfigService {
         };
         this.setSSOParams = (config) => {
             if (process?.env?.RTL_SSO) {
-                config.SSO.rtlSso = +process?.env?.RTL_SSO;
+                config.SSO.rtlSSO = +process?.env?.RTL_SSO;
             }
             else if (config.SSO && config.SSO.rtlSSO) {
-                config.SSO.rtlSso = config.SSO.rtlSSO;
+                config.SSO.rtlSSO = config.SSO.rtlSSO;
             }
             if (process?.env?.RTL_COOKIE_PATH) {
                 config.SSO.rtlCookiePath = process?.env?.RTL_COOKIE_PATH;
@@ -338,12 +338,12 @@ export class ConfigService {
             else if (config.SSO && config.SSO.logoutRedirectLink) {
                 config.SSO.logoutRedirectLink = config.SSO.logoutRedirectLink;
             }
-            if (+config.SSO.rtlSso) {
+            if (+config.SSO.rtlSSO) {
                 if (!config.SSO.rtlCookiePath || config.SSO.rtlCookiePath.trim() === '') {
                     this.errMsg = 'Please set rtlCookiePath value for single sign on option!';
                 }
                 else {
-                    this.common.readCookie();
+                    this.common.readCookie(config);
                 }
             }
         };
